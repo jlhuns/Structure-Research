@@ -167,7 +167,9 @@ def multiple_sequence_alignment(uniprot_ids, target_ko_id, threshold = 1.0):
 
     postURL = "https://www.ebi.ac.uk/Tools/services/rest/muscle/run"
 
-    email = "Joshua.l.hunsaker@gmail.com"
+    email = os.getenv("EMAIL")
+    if not email:
+        raise ValueError("EMAIL environment variable is not set")
     title = "practiceSubmission"
 
     sequences = readDirectoryContents(folder_path)
