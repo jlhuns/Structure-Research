@@ -24,7 +24,7 @@
 
 ## **To Run**
 
-BEFORE YOU RUN, YOU MUST INSERT YOUR EMAIL INTO THE FILE `multiple_sequence_alignment/muscle.py` ON LINE 170
+BEFORE YOU RUN, YOU MUST INSERT YOUR EMAIL AS A ENVIORMENT VARIABLE. LINUX: export EMAIL= #####   OR WINDOWS: set EMAIL= #######
 
 ### **Main Pipeline**
 
