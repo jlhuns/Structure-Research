@@ -2,13 +2,14 @@ import os
 import re
 import pandas as pd
 
-from cluster_analysis_3d import CalculateResidueDistanceWithDataframeInput
-
 CWD = os.getcwd()
+PARENT_DIR = os.path.dirname(CWD)
 
-PATH_TO_DATAFILES = os.path.join(CWD, "datafiles")
+PATH_TO_DATAFILES = os.path.join(PARENT_DIR, "datafiles")
 PATH_TO_UNIPROT_ENTRIES = os.path.join(PATH_TO_DATAFILES, "uniprot_entries")
 PATH_TO_EVAL_FILES = os.path.join(PATH_TO_DATAFILES, "eval_files")
+PATH_TO_MSA_FILE = os.path.join(PATH_TO_DATAFILES, "muscle_data", "alignment.aln")
+
 def convert_uniprot_data_to_position(entry):
     value_str = entry[2]
     # Check if the value string contains periods
@@ -63,13 +64,31 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                                 "Position": position,
                                 "Description": re.search(r'="([^"]+)"', next_line.split()[1]).group(1)
                             })
-    df = pd.DataFrame(data)
-    print(df)
+    activeSitesDF = pd.DataFrame(data)
+    return activeSitesDF
 
-    return df
+def FindActiveSitesInMSA(activeSitesDF, MSAFile):
+    print(activeSitesDF)
+    with open(MSAFile, 'r') as inF:
+        lines = inF.readlines()
+        for i in range(len(lines)):
+            line = lines[i]
+            print(line)
+
+                    # new idea, find the binding site and then check all the values above and below it and see if they are the same. 
+                    # or just go to the bottom line and see if that is a star which is much faster
+                    #add a conservation score in the DF database wich will have . : * or - Use this to see if any
+                    #binding sites don't have a * and then see what it is.
 
 if __name__ == "__main__":
     file_names = [file for file in os.listdir(PATH_TO_UNIPROT_ENTRIES) if os.path.isfile(os.path.join(PATH_TO_UNIPROT_ENTRIES, file))]
-    print(file_names)
+    # print(file_names)
+    dataFrames = []
     for file in file_names:
-        important_positions = read_uniprot_file_to_analyze_active_sites(PATH_TO_UNIPROT_ENTRIES, file)
+        dataFrames.append(read_uniprot_file_to_analyze_active_sites(PATH_TO_UNIPROT_ENTRIES, file))
+    final_dataframe = pd.concat(dataFrames, ignore_index=True)
+
+
+    FindActiveSitesInMSA(read_uniprot_file_to_analyze_active_sites(PATH_TO_UNIPROT_ENTRIES, "A0A0H4VJ04_9SPHN.txt"), PATH_TO_MSA_FILE)
+
+    # print(final_dataframe)
