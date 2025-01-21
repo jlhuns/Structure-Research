@@ -41,8 +41,9 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                     line = lines[i].strip()
                     next_line = lines[i + 1].strip()
 
-                    if line.startswith('AC'):
+                    if line.startswith('ID'):
                         uniProt_ID = line.split()[1].replace(';', '')
+                        # print(uniProt_ID)
 
                     if line.startswith('FT'):
                         entry = line.split()               
@@ -53,6 +54,7 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                                 "UniProt_ID": uniProt_ID,
                                 "Type": act_str,
                                 "Position": position, #if there are two numbers like [450, 455] then the active sites goes from 450 to 455
+                                "Conservation_Score": None,
                                 "Description": re.search(r'(?<==")([^"]+)', ' '.join(next_line.split()[1:])).group(1)
                             })                         
                         
@@ -62,23 +64,66 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                                 "UniProt_ID": uniProt_ID,
                                 "Type": bind_str,
                                 "Position": position,
+                                "Conservation_Score": None,
                                 "Description": re.search(r'="([^"]+)"', next_line.split()[1]).group(1)
                             })
     activeSitesDF = pd.DataFrame(data)
+    # print(activeSitesDF)
     return activeSitesDF
 
 def FindActiveSitesInMSA(activeSitesDF, MSAFile):
-    print(activeSitesDF)
+    # print(activeSitesDF)
+    def find_char_position(full_string: str, non_hyphen_index: int) -> int:
+        non_hyphen_count = 0
+        for pos, char in enumerate(full_string):
+            if char != '-' and char != "\n":
+                if non_hyphen_count == non_hyphen_index:
+                    return pos - 1 #base 0 indexing
+                non_hyphen_count += 1
+        # print(sequence)
+        raise ValueError("Index out of range for non-hyphenated string.")
+    
     with open(MSAFile, 'r') as inF:
         lines = inF.readlines()
-        for i in range(len(lines)):
-            line = lines[i]
-            print(line)
+        uniProtIDs = set(activeSitesDF.loc[:, "UniProt_ID"])
+        uniProtIDs = list(uniProtIDs)
+        results = []
 
-                    # new idea, find the binding site and then check all the values above and below it and see if they are the same. 
-                    # or just go to the bottom line and see if that is a star which is much faster
-                    #add a conservation score in the DF database wich will have . : * or - Use this to see if any
-                    #binding sites don't have a * and then see what it is.
+        for uniProtID in uniProtIDs:
+            conservationScoreString = ""
+            sequence = ""
+            charactersToRemove = 0
+
+            for i in range(len(lines)):
+                line = lines[i]
+                if(line.startswith(uniProtID)):
+                    newLineCount = line.count("\n")
+                    spaces = len([char for char in line if char.isspace()])
+                    match = re.search(r'\S+', line)
+                    charactersToRemove = spaces + match.end() - newLineCount
+                    line = line[charactersToRemove:]
+                    line = line.replace(" ", "")
+                    sequence += line
+
+                if(line.startswith(" ")):
+                    line = line[charactersToRemove:]
+                    conservationScoreString += (line)
+            print("Sequence:", sequence)
+            print("Sequence length (non-hyphen):", sum(1 for char in sequence if char != '-' and char != "\n"))
+
+            filtered_df = activeSitesDF[activeSitesDF['UniProt_ID'].str.startswith(uniProtID)]
+            for index, row in filtered_df.iterrows():
+                if row['Type'] == "BINDING":
+                    # print("LENGTH: ", len(str(row["Position"])))
+                    # print(row)
+                    position = find_char_position(sequence, row['Position'])  # Define or import this function
+                    filtered_df.loc[index, 'Conservation_Score'] = conservationScoreString[position]
+
+            results.append(filtered_df)
+            # print(results)
+        final_results = pd.concat(results, ignore_index=True)
+        print(final_results)
+
 
 if __name__ == "__main__":
     file_names = [file for file in os.listdir(PATH_TO_UNIPROT_ENTRIES) if os.path.isfile(os.path.join(PATH_TO_UNIPROT_ENTRIES, file))]
@@ -89,6 +134,6 @@ if __name__ == "__main__":
     final_dataframe = pd.concat(dataFrames, ignore_index=True)
 
 
-    FindActiveSitesInMSA(read_uniprot_file_to_analyze_active_sites(PATH_TO_UNIPROT_ENTRIES, "A0A0H4VJ04_9SPHN.txt"), PATH_TO_MSA_FILE)
+    FindActiveSitesInMSA(final_dataframe, PATH_TO_MSA_FILE)
 
     # print(final_dataframe)
