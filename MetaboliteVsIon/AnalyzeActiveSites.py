@@ -109,16 +109,17 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
                 if(line.startswith(" ")):
                     line = line[charactersToRemove:]
                     conservationScoreString += (line)
-            # print("Sequence:", sequence)
-            # print("Sequence length (non-hyphen):", sum(1 for char in sequence if char != '-' and char != "\n"))
 
             filtered_df = activeSitesDF[activeSitesDF['UniProt_ID'].str.startswith(uniProtID)]
             for index, row in filtered_df.iterrows():
                 if row['Type'] == "BINDING":
-                    # print("LENGTH: ", len(str(row["Position"])))
-                    # print(row)
                     position = find_char_position(sequence, row['Position'])  # Define or import this function
-                    filtered_df.loc[index, 'Conservation_Score'] = conservationScoreString[position]
+                    #handles edge case where if conservation score is the last char then it returns "\n" but going back one will give the correct conservation score.
+                    if conservationScoreString[position] == "\n":
+                        filtered_df.loc[index, 'Conservation_Score'] = conservationScoreString[position-1]
+                    else:
+                        filtered_df.loc[index, 'Conservation_Score'] = conservationScoreString[position]
+
 
 
             results.append(filtered_df)
