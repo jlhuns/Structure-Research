@@ -54,7 +54,9 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                                 "UniProt_ID": uniProt_ID,
                                 "Type": act_str,
                                 "Position": position, #if there are two numbers like [450, 455] then the active sites goes from 450 to 455
-                                "Conservation_Score": None,
+                                "Conservation_Score": "TBD",
+                                "Surrounding_Score_Before": "TBD",
+                                "Surrounding_Score_After": "TDB",
                                 "Description": re.search(r'(?<==")([^"]+)', ' '.join(next_line.split()[1:])).group(1)
                             })                         
                         
@@ -64,7 +66,7 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                                 "UniProt_ID": uniProt_ID,
                                 "Type": bind_str,
                                 "Position": position,
-                                "Conservation_Score": None,
+                                "Conservation_Score": "TBD",
                                 "Description": re.search(r'="([^"]+)"', next_line.split()[1]).group(1)
                             })
     activeSitesDF = pd.DataFrame(data)
@@ -88,11 +90,14 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
         uniProtIDs = set(activeSitesDF.loc[:, "UniProt_ID"])
         uniProtIDs = list(uniProtIDs)
         results = []
-
+        
         for uniProtID in uniProtIDs:
             conservationScoreString = ""
             sequence = ""
             charactersToRemove = 0
+            conservationScoreStringBefore = ""
+            conservationScoreStringAfter = ""
+            
 
             for i in range(len(lines)):
                 line = lines[i]
@@ -118,13 +123,14 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
                     # print(row)
                     position = find_char_position(sequence, row['Position'])  # Define or import this function
                     filtered_df.loc[index, 'Conservation_Score'] = conservationScoreString[position]
+                    filtered_df.loc[index, 'Surrounding_Score_Before'] = conservationScoreString[position-5:position]
+                    filtered_df.loc[index, 'Surrounding_Score_After'] = conservationScoreString[position:position+5]
+
 
             results.append(filtered_df)
             # print(results)
         final_results = pd.concat(results, ignore_index=True)
-        # filtered_df = final_results[final_results['Conservation_Score'] != "*"]
-        # print(filtered_df)
-        print(final_results)
+        return final_results
 
 
 if __name__ == "__main__":
@@ -136,6 +142,8 @@ if __name__ == "__main__":
     final_dataframe = pd.concat(dataFrames, ignore_index=True)
 
 
-    FindActiveSitesInMSA(final_dataframe, PATH_TO_MSA_FILE)
+    ActiveSitesDF = FindActiveSitesInMSA(final_dataframe, PATH_TO_MSA_FILE)
+    print(ActiveSitesDF.to_string())
+
 
     # print(final_dataframe)
