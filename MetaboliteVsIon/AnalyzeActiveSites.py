@@ -55,8 +55,6 @@ def read_uniprot_file_to_analyze_active_sites(directory, filename):
                                 "Type": act_str,
                                 "Position": position, #if there are two numbers like [450, 455] then the active sites goes from 450 to 455
                                 "Conservation_Score": "TBD",
-                                "Surrounding_Score_Before": "TBD",
-                                "Surrounding_Score_After": "TDB",
                                 "Description": re.search(r'(?<==")([^"]+)', ' '.join(next_line.split()[1:])).group(1)
                             })                         
                         
@@ -95,8 +93,6 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
             conservationScoreString = ""
             sequence = ""
             charactersToRemove = 0
-            conservationScoreStringBefore = ""
-            conservationScoreStringAfter = ""
             
 
             for i in range(len(lines)):
@@ -123,8 +119,6 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
                     # print(row)
                     position = find_char_position(sequence, row['Position'])  # Define or import this function
                     filtered_df.loc[index, 'Conservation_Score'] = conservationScoreString[position]
-                    filtered_df.loc[index, 'Surrounding_Score_Before'] = conservationScoreString[position-5:position]
-                    filtered_df.loc[index, 'Surrounding_Score_After'] = conservationScoreString[position:position+5]
 
 
             results.append(filtered_df)
