@@ -108,8 +108,8 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
                 if(line.startswith(" ")):
                     line = line[charactersToRemove:]
                     conservationScoreString += (line)
-            print("Sequence:", sequence)
-            print("Sequence length (non-hyphen):", sum(1 for char in sequence if char != '-' and char != "\n"))
+            # print("Sequence:", sequence)
+            # print("Sequence length (non-hyphen):", sum(1 for char in sequence if char != '-' and char != "\n"))
 
             filtered_df = activeSitesDF[activeSitesDF['UniProt_ID'].str.startswith(uniProtID)]
             for index, row in filtered_df.iterrows():
@@ -122,6 +122,8 @@ def FindActiveSitesInMSA(activeSitesDF, MSAFile):
             results.append(filtered_df)
             # print(results)
         final_results = pd.concat(results, ignore_index=True)
+        # filtered_df = final_results[final_results['Conservation_Score'] != "*"]
+        # print(filtered_df)
         print(final_results)
 
 
